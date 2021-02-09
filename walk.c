@@ -2,7 +2,7 @@
 /*              */
 /* Walking Test */
 /*              */
-/* Version 0.6  */
+/* Version 0.7  */
 /*              */
 /* 09/29/91     */
 /*              */
@@ -12,9 +12,9 @@
 #include    <intuition/intuition.h>
 
 char    map[17] [17] = {
-            "****************",
-            "****************",
-            "**..*****.**..**",
+            ".***************",
+            ".***************",
+            "....*****.**..**",
             "***...***....***",
             "***.*.*...**..**",
             "**..*.*.*****.**",
@@ -26,12 +26,35 @@ char    map[17] [17] = {
             "**.**...***.****",
             "**.******.....**",
             "**........***.**",
-            "****************",
-            "****************",
+            "*************.**",
+            ".************...",
                };
+
+/************************/
+/*                      */
+/*  Wall Gfx Data       */
+/*                      */
+/************************/
 
 USHORT  Wall[] =
 {
+    0x0000,
+    0x0000,
+    0x0000,
+    0x0000,
+    0x0000,
+    0x0000,
+    0x0000,
+    0x0000,
+    0x0000,
+    0x0000,
+    0x0000,
+    0x0000,
+    0x0000,
+    0x0000,
+    0x0000,
+    0x0000,
+    
     0x0000,
     0xFFF7,
     0xFFF7,
@@ -50,6 +73,12 @@ USHORT  Wall[] =
     0xF7FF
 };
 
+/************************/
+/*                      */
+/*  Grass Gfx Data      */
+/*                      */
+/************************/
+
 USHORT  Grass[] =
 {
     0x2002,
@@ -67,11 +96,51 @@ USHORT  Grass[] =
     0x0001,
     0x2000,
     0x0010,
-    0x0100
+    0x0100,
+    
+    0x0000,
+    0x0000,
+    0x0000,
+    0x0000,
+    0x0000,
+    0x0000,
+    0x0000,
+    0x0000,
+    0x0000,
+    0x0000,
+    0x0000,
+    0x0000,
+    0x0000,
+    0x0000,
+    0x0000,
+    0x0000
 };
+
+/************************/
+/*                      */
+/*  Player Gfx Data     */
+/*                      */
+/************************/
 
 USHORT  Avatar[] =
 {
+    0x01C0,
+    0x01C0,
+    0x01C0,
+    0x0080,
+    0x1F70,
+    0x1EB8,
+    0x1F58,
+    0x1F28,
+    0x0ED4,
+    0x05E8,
+    0x03D4,
+    0x03E0,
+    0x0770,
+    0x0770,
+    0x0770,
+    0x0770,
+    
     0x01C0,
     0x01C0,
     0x01C0,
@@ -95,32 +164,39 @@ struct  Window      *FirstWindow;
 
 struct  NewWindow   FirstNewWindow =
 {
-    230, 110,
-    130, 130,
-    0, 1,
-    VANILLAKEY,
-    SMART_REFRESH | ACTIVATE,
-    NULL,
-    NULL,
-    (UBYTE *) "Walking 0.6",
-    NULL,
-    NULL,
-    90, 90,
-    90, 90,
-    WBENCHSCREEN,
+    230, 110,                                   /* XPos, YPos       */
+    130, 130,                                   /* Width, Height    */
+    0, 1,                                       /* Pen Colors       */
+    VANILLAKEY | NEWSIZE | CLOSEWINDOW,         /* IDCME Flags      */
+    SMART_REFRESH | ACTIVATE | WINDOWDEPTH |    /* Window Flags     */ 
+    WINDOWSIZING | WINDOWDRAG | WINDOWCLOSE,
+    NULL,                                       /* Gadget Ptr       */
+    NULL,                                       /* Chk Mrk Gfx Ptr  */
+    (UBYTE *) "Walking 0.7",                    /* Window Title Ptr */
+    NULL,                                       /* Screen Ptr       */
+    NULL,                                       /* BitMap Ptr       */
+    130, 130,                                   /* Min Width/Height */
+    320, 200,                                   /* Max Width/Height */
+    WBENCHSCREEN,                               /* Window Type      */
 };
 
 struct  Image   Output =
 {
-    0, 0,
-    16, 16,
-    1,
-    &Avatar[0],
-    1, 0,
-    NULL
+    0, 0,       /* Left, Top Edge       */
+    16, 16,     /* Width, Height        */
+    2,          /* Depth (Bit Planes)   */
+    &Avatar[0], /* Image Ptr            */
+    3, 0,       /* Plane Pick, On/Off   */
+    NULL        /* Next Image Prt       */
 };
 
 struct  IntuiMessage    *message;
+
+/************************/
+/*                      */
+/* Main Program Loop    */
+/*                      */
+/************************/
 
 void    main()
 
@@ -130,6 +206,7 @@ void    main()
     int tx, ty;
     int exit = 0;
     char    code;
+    ULONG   MessageClass;
                 
     Open_All();
     
@@ -139,60 +216,71 @@ void    main()
         tx = x;
         ty = y;
         
-        exit = 1;
-        
         if ((message = (struct IntuiMessage *) GetMsg(FirstWindow->UserPort)) == NULL)
         {
             Wait(1L << FirstWindow->UserPort->mp_SigBit);
             continue;
         }
         
+        ReplyMsg(message);
+        
         code = message->Code;
+        MessageClass = message->Class;
         
-        if(code == 'i')
+        if(MessageClass & NEWSIZE) draw(x,y);
+        
+        if(MessageClass & VANILLAKEY)
         {
-            if(y > 2)
+            if(code == 'i')
+            {
                 ty = y - 1;
-        }
-        
-        if(code == 'k')
-        {
-            if(y < 13)
+                if(ty < 0) ty = ty + 16;
+            }
+            
+            if(code == 'k')
+            {
                 ty = y + 1;
-        }
-        
-        if(code == 'j')
-        {
-            if(x > 2)
+                if(ty > 15) ty = ty - 16;
+            }
+            
+            if(code == 'j')
+            {
                 tx = x - 1;
-        }
-        
-        if(code == 'l')
-        {
-            if(x < 13)
+                if(tx < 0) tx = tx + 16;
+            }
+            
+            if(code == 'l')
+            {
                 tx = x + 1;
-        }
-        
-        if(code != 'q')
-        {
-            exit = 0;
+                if(tx > 15) tx = tx - 16;
+            }
+            
             if(map [ty] [tx] == '*')
             {
                 DisplayBeep(NULL);
-                printf("\nBlocked!!\n");
+/*              printf("\nBlocked!!\n");    */
             }
             else
             {
                 y = ty;
                 x = tx;
             }
+            
             draw(x,y);
         }
-        else
-            Close_All(TRUE);
+        
+        if(MessageClass & CLOSEWINDOW) Close_All(TRUE);
     }
 }
 
+
+/****************************************/
+/*                                      */
+/* Draw Screen                          */
+/*                                      */
+/* draw(x,y) : x = XPos, Y = YPos       */
+/*                                      */
+/****************************************/
 
 draw(x,y)
 
@@ -201,27 +289,45 @@ register int x, y;
 {
     struct  RastPort    *MyWindowsRastPort;
     
-    int     xx, yy, cx, cy;
+    int     xx, yy, cx, cy, dx, dy;
 
     MyWindowsRastPort = FirstWindow->RPort;
     
-    printf("\n%d, %d\n", x, y);
-    for(yy = y - 2, cy = 0; yy <= y + 2; yy++, cy++)
+/*  printf("\n%d, %d\n", x, y); */
+    for(dy = y - 2, cy = 0; dy <= y + 2; dy++, cy++)
     {
-        for(xx = x - 2, cx = 0; xx <= x + 2; xx++, cx++)
+        yy = dy;
+        
+        if(yy < 0) yy = yy + 16;
+        if(yy > 15) yy = yy - 16;
+    
+        for(dx = x - 2, cx = 0; dx <= x + 2; dx++, cx++)
         {
+            xx = dx;
+            
+            if(xx < 0) xx = xx + 16;
+            if(xx > 15) xx = xx - 16;
+            
             if(map[yy] [xx] == '*') Output.ImageData = &Wall[0];
             if(map[yy] [xx] == '.') Output.ImageData = &Grass[0];
             Output.LeftEdge = (5 + 16 * cx);
             Output.TopEdge = (5 + 16 * cy);
             DrawImage(MyWindowsRastPort, &Output, 10L, 10L);
+/*          printf("%c", map[yy] [xx]); */
         }
+/*      printf("  %d, %d\n", xx, yy);   */
     }
     Output.LeftEdge = 37;
     Output.TopEdge = 37;
     Output.ImageData = &Avatar[0];
     DrawImage(MyWindowsRastPort, &Output, 10L, 10L);
 }
+
+/********************************/
+/*                              */
+/* Open Intuition and Window    */
+/*                              */
+/********************************/
 
 Open_All()
 {
@@ -241,6 +347,12 @@ Open_All()
     }
 }
 
+/********************************/
+/*                              */
+/* Close Intuition and Window   */
+/*                              */
+/********************************/
+
 Close_All(tf)
 
 register    int tf;
@@ -251,4 +363,3 @@ register    int tf;
 
     exit(tf);
 }
-
