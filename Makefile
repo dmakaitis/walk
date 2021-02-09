@@ -1,2 +1,9 @@
-walk: walk.c
-	vc +aos68k -c99 -I${NDK_INC} walk.c -lamiga -lauto -o walk
+walk: walk.o
+	vc +aos68k -lamiga -lauto -o $@ $^
+
+.c.o:
+	vc +aos68k -c -c99 -I${NDK_INC} $<
+
+clean:
+	rm walk
+	rm *.o
