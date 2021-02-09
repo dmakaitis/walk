@@ -2,7 +2,7 @@
 /*              */
 /* Walking Test */
 /*              */
-/* Version 1.0  */
+/* Version 1.1  */
 /*              */
 /* 09/29/91     */
 /*              */
@@ -216,7 +216,7 @@ struct  NewScreen   NewGameScreen =
     NULL,
     CUSTOMSCREEN,
     NULL,
-    (UBYTE *)"Ultima Walking Test, V. 1.0",
+    (UBYTE *)"Ultima Walking Test, V. 1.1",
     NULL,
     NULL,
 };
@@ -231,7 +231,7 @@ struct  NewWindow   FirstNewWindow =
     WINDOWSIZING | WINDOWDRAG | WINDOWCLOSE,
     NULL,                                       /* Gadget Ptr       */
     NULL,                                       /* Chk Mrk Gfx Ptr  */
-    (UBYTE *) "Walk 1.0",                       /* Window Title Ptr */
+    (UBYTE *) "Walk 1.1",                       /* Window Title Ptr */
     NULL,                                       /* Screen Ptr       */
     NULL,                                       /* BitMap Ptr       */
     130, 130,                                   /* Min Width/Height */
@@ -289,40 +289,72 @@ void    main()
         
         if(MessageClass & VANILLAKEY)
         {
-            if(code == 'i')
+            if(code == '8')
             {
                 ty = y - 1;
                 if(ty < 0) ty = ty + MAPSIZE;
             }
             
-            if(code == 'k')
+            if(code == '2')
             {
                 ty = y + 1;
                 if(ty > MAPSIZE-1) ty = ty - MAPSIZE;
             }
             
-            if(code == 'j')
+            if(code == '4')
             {
                 tx = x - 1;
                 if(tx < 0) tx = tx + MAPSIZE;
             }
             
-            if(code == 'l')
+            if(code == '6')
             {
                 tx = x + 1;
                 if(tx > MAPSIZE-1) tx = tx - MAPSIZE;
             }
             
-/*          if(map [ty] [tx] == '*')
+            if(code == '7')
+            {
+                ty = y - 1;
+                if(ty < 0) ty = ty + MAPSIZE;
+                tx = x - 1;
+                if(tx < 0) tx = tx + MAPSIZE;
+            }
+            
+            if(code == '9')
+            {
+                ty = y - 1;
+                if(ty < 0) ty = ty + MAPSIZE;
+                tx = x + 1;
+                if(tx > MAPSIZE-1) tx = tx - MAPSIZE;
+            }
+            
+            if(code == '1')
+            {
+                ty = y + 1;
+                if(ty > MAPSIZE-1) ty = ty - MAPSIZE;
+                tx = x - 1;
+                if(tx < 0) tx = tx + MAPSIZE;
+            }
+            
+            if(code == '3')
+            {
+                ty = y + 1;
+                if(ty > MAPSIZE-1) ty = ty - MAPSIZE;
+                tx = x + 1;
+                if(tx > MAPSIZE-1) tx = tx - MAPSIZE;
+            }
+            
+            if(map [ty] [tx] == '*')
             {
                 DisplayBeep(NULL);
-/*              printf("\nBlocked!!\n");    *//*
+/*              printf("\nBlocked!!\n");    */
             }
             else
             {
-            */  y = ty;
-                x = tx; /*
-            }                   */
+                y = ty;
+                x = tx; 
+            }                   
             
             draw(x,y);
         }
@@ -471,6 +503,7 @@ register    USHORT  *o;
     }
     Output.ImageData = &Chr[0];
 }
+
 
 
 
