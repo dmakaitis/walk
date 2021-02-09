@@ -2,7 +2,7 @@
 /*              */
 /* Walking Test */
 /*              */
-/* Version 0.4  */
+/* Version 0.5  */
 /*              */
 /* 09/28/91     */
 /*              */
@@ -36,13 +36,13 @@ struct  Window      *FirstWindow;
 struct  NewWindow   FirstNewWindow =
 {
     230, 110,
-    90, 90,
+    130, 130,
     0, 1,
+    VANILLAKEY,
+    SMART_REFRESH | ACTIVATE,
     NULL,
-    SMART_REFRESH,
     NULL,
-    NULL,
-    (UBYTE *) "Walking 0.4",
+    (UBYTE *) "Walking 0.5",
     NULL,
     NULL,
     90, 90,
@@ -60,56 +60,67 @@ struct  IntuiText   FirstText =
     NULL
 };
 
+struct  IntuiMessage    *message;
+
 void    main()
 
 {
-    int x = 8;
+    int x = 9;
     int y = 8;
     int tx, ty;
     int exit = 0;
-    char    input;
+    char    code;
                 
     Open_All();
     
     draw(x,y);
-    do
+    FOREVER
     {
         tx = x;
         ty = y;
         
         exit = 1;
         
-        scanf("%c", &input);
+        if ((message = (struct IntuiMessage *) GetMsg(FirstWindow->UserPort)) == NULL)
+        {
+            Wait(1L << FirstWindow->UserPort->mp_SigBit);
+            continue;
+        }
         
-        if(input == 'i')
+        code = message->Code;
+        
+        if(code == 'i')
         {
             if(y > 2)
                 ty = y - 1;
         }
         
-        if(input == 'k')
+        if(code == 'k')
         {
             if(y < 13)
                 ty = y + 1;
         }
         
-        if(input == 'j')
+        if(code == 'j')
         {
             if(x > 2)
                 tx = x - 1;
         }
         
-        if(input == 'l')
+        if(code == 'l')
         {
             if(x < 13)
                 tx = x + 1;
         }
         
-        if(input != 'q')
+        if(code != 'q')
         {
             exit = 0;
             if(map [ty] [tx] == '*')
+            {
+                DisplayBeep(NULL);
                 printf("\nBlocked!!\n");
+            }
             else
             {
                 y = ty;
@@ -117,8 +128,9 @@ void    main()
             }
             draw(x,y);
         }
-    } while(exit == 0);
-    Close_All();
+        else
+            Close_All(TRUE);
+    }
 }
 
 
@@ -135,7 +147,7 @@ register int x, y;
 
     MyWindowsRastPort = FirstWindow->RPort;
     
-    printf("\n%d, %d\n\n", x, y);
+    printf("\n%d, %d\n", x, y);
     for(yy = y - 2, cy = 0; yy <= y + 2; yy++, cy++)
     {
         for(xx = x - 2, cx = 0; xx <= x + 2; xx++, cx++)
@@ -145,11 +157,15 @@ register int x, y;
             FirstText.TopEdge = (5 + 8 * cy);
             FirstText.IText = (UBYTE *) Output;
             PrintIText(MyWindowsRastPort, &FirstText, 10L, 10L);
-            printf("%c", map[yy] [xx]);
         }
-        printf("\n");
     }
-    printf("\n%c\n:", map[y] [x]);
+    *Output = 'A';
+    FirstText.LeftEdge = 25;
+    FirstText.TopEdge = 21;
+    FirstText.IText = (UBYTE *) Output;
+    FirstText.DrawMode = JAM1; 
+    PrintIText(MyWindowsRastPort, &FirstText, 10L, 10L);
+    FirstText.DrawMode = JAM2;
 }
 
 Open_All()
@@ -160,20 +176,24 @@ Open_All()
     if (!(IntuitionBase = (struct IntuitionBase *) OpenLibrary("intuition.library", 0L)))
     {
         printf("Intuition Library not found!\n");
-        Close_All();
-        exit(FALSE);
+        Close_All(FALSE);
     }
     
     if (!(FirstWindow = (struct Window *) OpenWindow(&FirstNewWindow)))
     {
         printf("Window will not open!\n");
-        Close_All();
-        exit(FALSE);
+        Close_All(FALSE);
     }
 }
 
-Close_All()
+Close_All(tf)
+
+register    int tf;
+
 {
     if (FirstWindow)    CloseWindow(FirstWindow);
     if (IntuitionBase)  CloseLibrary(IntuitionBase);
+
+    exit(tf);
 }
+
