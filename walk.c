@@ -2,7 +2,7 @@
 /*              */
 /* Walking Test */
 /*              */
-/* Version 1.3  */
+/* Version 1.4  */
 /*              */
 /* 09/29/91     */
 /*              */
@@ -12,6 +12,8 @@
 #include    <intuition/intuition.h>
 #include    <graphics/gfx.h>
 #define     MAPSIZE 32
+
+int UpdateCntr;
 
 char    map[33] [33] = {
             "*******..................*******",
@@ -170,9 +172,9 @@ USHORT  Avatar[] =
 };
     
 /********************************/
-/*                              */
-/*  Chr Output Buffer           */
-/*                              */
+/*              */
+/*  Chr Output Buffer   */
+/*              */
 /********************************/
 
 USHORT  Chr[] =
@@ -220,7 +222,9 @@ USHORT  Sil[]   =
 struct  GfxBase     *GfxBase;
 struct  IntuitionBase   *IntuitionBase;
 struct  Window      *FirstWindow;
-struct  Screen      *GameScreen;
+struct  Window      *FirstWindow2;
+struct  Screen      *GameScreen1;
+struct  Screen      *GameScreen2;
 struct  ViewPort    *GamePort;
 
 struct  NewScreen   NewGameScreen =
@@ -232,7 +236,7 @@ struct  NewScreen   NewGameScreen =
     NULL,
     CUSTOMSCREEN,
     NULL,
-    (UBYTE *)"Ultima Walking Test, V. 1.3",
+    (UBYTE *)"Ultima Walking Test, V. 1.4",
     NULL,
     NULL,
 };
@@ -242,12 +246,12 @@ struct  NewWindow   FirstNewWindow =
     0, 0,                                       /* XPos, YPos       */
     200, 200,                                   /* Width, Height    */
     8, 10,                                      /* Pen Colors       */
-    VANILLAKEY | NEWSIZE | CLOSEWINDOW,         /* IDCME Flags      */
+    RAWKEY | CLOSEWINDOW,                       /* IDCME Flags      */
     SMART_REFRESH | ACTIVATE | WINDOWDEPTH |    /* Window Flags     */ 
-    WINDOWSIZING | WINDOWDRAG | WINDOWCLOSE,
+    WINDOWDRAG | WINDOWCLOSE,
     NULL,                                       /* Gadget Ptr       */
     NULL,                                       /* Chk Mrk Gfx Ptr  */
-    (UBYTE *) "Walk 1.3",                       /* Window Title Ptr */
+    (UBYTE *) "Walk 1.4",                       /* Window Title Ptr */
     NULL,                                       /* Screen Ptr       */
     NULL,                                       /* BitMap Ptr       */
     200, 200,                                   /* Min Width/Height */
@@ -284,9 +288,12 @@ void    main()
                 
     Open_All();
     
-    draw(x,y);
     FOREVER
     {
+        ActivateWindow(FirstWindow);
+        
+        draw(x,y);
+        
         tx = x;
         ty = y;
         
@@ -301,35 +308,33 @@ void    main()
         code = message->Code;
         MessageClass = message->Class;
         
-        if(MessageClass & NEWSIZE) draw(x,y);
-        
-        if(MessageClass & VANILLAKEY)
+        if(MessageClass & RAWKEY)
         {
-            if(code == '8')
+            if(code == 0x3e)
             {
                 ty = y - 1;
                 if(ty < 0) ty = ty + MAPSIZE;
             }
             
-            if(code == '2')
+            if(code == 0x1e)
             {
                 ty = y + 1;
                 if(ty > MAPSIZE-1) ty = ty - MAPSIZE;
             }
             
-            if(code == '4')
+            if(code == 0x2d)
             {
                 tx = x - 1;
                 if(tx < 0) tx = tx + MAPSIZE;
             }
             
-            if(code == '6')
+            if(code == 0x2f)
             {
                 tx = x + 1;
                 if(tx > MAPSIZE-1) tx = tx - MAPSIZE;
             }
             
-            if(code == '7')
+            if(code == 0x3d)
             {
                 ty = y - 1;
                 if(ty < 0) ty = ty + MAPSIZE;
@@ -337,7 +342,7 @@ void    main()
                 if(tx < 0) tx = tx + MAPSIZE;
             }
             
-            if(code == '9')
+            if(code == 0x3f)
             {
                 ty = y - 1;
                 if(ty < 0) ty = ty + MAPSIZE;
@@ -345,7 +350,7 @@ void    main()
                 if(tx > MAPSIZE-1) tx = tx - MAPSIZE;
             }
             
-            if(code == '1')
+            if(code == 0x1d)
             {
                 ty = y + 1;
                 if(ty > MAPSIZE-1) ty = ty - MAPSIZE;
@@ -353,7 +358,7 @@ void    main()
                 if(tx < 0) tx = tx + MAPSIZE;
             }
             
-            if(code == '3')
+            if(code == 0x1f)
             {
                 ty = y + 1;
                 if(ty > MAPSIZE-1) ty = ty - MAPSIZE;
@@ -361,6 +366,8 @@ void    main()
                 if(tx > MAPSIZE-1) tx = tx - MAPSIZE;
             }
             
+            if(code == 0x45) Close_All(TRUE);
+                
             if(((map [ty] [x] == '*') && (map [y] [tx] == '*')) || (map [ty] [tx] == '*'))
                 DisplayBeep(NULL);
             else
@@ -368,8 +375,6 @@ void    main()
                 y = ty;
                 x = tx; 
             }                   
-            
-            draw(x,y);
         }
         
         if(MessageClass & CLOSEWINDOW) Close_All(TRUE);
@@ -395,41 +400,53 @@ register int x, y;
     int     xx, yy, cx, cy, dx, dy;
     USHORT  *ChrBakImageData;
 
-    MyWindowsRastPort = FirstWindow->RPort;
+    UpdateCntr = UpdateCntr ^ 2;
     
-/*  printf("\n%d, %d\n", x, y); */
-    for(dy = y - 4, cy = 0; dy <= y + 4; dy++, cy++)
+    if(UpdateCntr && 2)
+    
     {
-        yy = dy;
+        UpdateCntr = UpdateCntr ^ 1;
         
-        if(yy < 0) yy = yy + MAPSIZE;
-        if(yy > MAPSIZE-1) yy = yy - MAPSIZE;
-    
-        for(dx = x - 4, cx = 0; dx <= x + 4; dx++, cx++)
+        if(UpdateCntr) MyWindowsRastPort = FirstWindow->RPort;
+        else MyWindowsRastPort = FirstWindow2->RPort;
+        
+    /*  printf("\n%d, %d\n", x, y); */
+        for(dy = y - 4, cy = 0; dy <= y + 4; dy++, cy++)
         {
-            xx = dx;
+            yy = dy;
             
-            if(xx < 0) xx = xx + MAPSIZE;
-            if(xx > MAPSIZE-1) xx = xx - MAPSIZE;
-            
-            if(map[yy] [xx] == '*') Output.ImageData = &Wall[0];
-            if(map[yy] [xx] == '.') Output.ImageData = &Grass[0];
-            if(xx == x && yy == y)
+            if(yy < 0) yy = yy + MAPSIZE;
+            if(yy > MAPSIZE-1) yy = yy - MAPSIZE;
+        
+            for(dx = x - 4, cx = 0; dx <= x + 4; dx++, cx++)
             {
-                ChrBakImageData = Output.ImageData;
-                DrawPlayer(ChrBakImageData);
+                xx = dx;
+                
+                if(xx < 0) xx = xx + MAPSIZE;
+                if(xx > MAPSIZE-1) xx = xx - MAPSIZE;
+                
+                if(map[yy] [xx] == '*') Output.ImageData = &Wall[0];
+                if(map[yy] [xx] == '.') Output.ImageData = &Grass[0];
+                if(xx == x && yy == y)
+                {
+                    ChrBakImageData = Output.ImageData;
+                    DrawPlayer(ChrBakImageData);
+                }
+                            
+                Output.LeftEdge = (5 + 16 * cx);
+                Output.TopEdge = (5 + 16 * cy);
+                DrawImage(MyWindowsRastPort, &Output, 10L, 10L);
+    /*          printf("%c", map[yy] [xx]); */
             }
-                        
-            Output.LeftEdge = (5 + 16 * cx);
-            Output.TopEdge = (5 + 16 * cy);
             DrawImage(MyWindowsRastPort, &Output, 10L, 10L);
-/*          printf("%c", map[yy] [xx]); */
-        }
-        DrawImage(MyWindowsRastPort, &Output, 10L, 10L);
             
-/*      printf("  %d, %d\n", xx, yy);   */
+            if(UpdateCntr) ScreenToFront(GameScreen2);
+            else ScreenToFront(GameScreen1);
+                
+/*          printf("  %d, %d\n", xx, yy);   */
+        }
     }
-}
+}   
 
 /********************************/
 /*                              */
@@ -454,13 +471,13 @@ Open_All()
         Close_All(FALSE);
     }
     
-    if(!(GameScreen = (struct Screen *) OpenScreen(&NewGameScreen)))
+    if(!(GameScreen1 = (struct Screen *) OpenScreen(&NewGameScreen)))
     {
         printf("Screen cannot be opened!\n");
         Close_All(FALSE);
     }
     
-    FirstNewWindow.Screen = GameScreen;
+    FirstNewWindow.Screen = GameScreen1;
     
     if (!(FirstWindow = (struct Window *) OpenWindow(&FirstNewWindow)))
     {
@@ -468,7 +485,23 @@ Open_All()
         Close_All(FALSE);
     }
     
+    if(!(GameScreen2 = (struct Screen *) OpenScreen(&NewGameScreen)))
+    {
+        printf("Screen cannot bo opened!\n");
+        Close_All(FALSE);
+    }
+    
+    FirstNewWindow.Screen = GameScreen2;
+    
+    if(!(FirstWindow2 = (struct Window *) OpenWindow(&FirstNewWindow)))
+    {
+        Close_All(FALSE);
+    }
+    
     GamePort = (struct ViewPort *) ViewPortAddress(FirstWindow);
+    LoadRGB4(GamePort, &Colors[0], 32);
+    
+    GamePort = (struct ViewPort *) ViewPortAddress(FirstWindow2);
     LoadRGB4(GamePort, &Colors[0], 32);
 }
 
@@ -483,8 +516,10 @@ Close_All(tf)
 register    int tf;
 
 {
+    if (FirstWindow2)   CloseWindow(FirstWindow2);
     if (FirstWindow)    CloseWindow(FirstWindow);
-    if (GameScreen)     CloseScreen(GameScreen);
+    if (GameScreen2)    CloseScreen(GameScreen2);
+    if (GameScreen1)    CloseScreen(GameScreen1);
     if (GfxBase)        CloseLibrary(GfxBase);
     if (IntuitionBase)  CloseLibrary(IntuitionBase);
 
