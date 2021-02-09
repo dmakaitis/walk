@@ -2,16 +2,16 @@
 /*              */
 /* Walking Test */
 /*              */
-/* Version 0.5  */
+/* Version 0.6  */
 /*              */
-/* 09/28/91     */
+/* 09/29/91     */
 /*              */
 /****************/
 
 #include    <exec/types.h>
 #include    <intuition/intuition.h>
 
-char    map[16] [16] = {
+char    map[17] [17] = {
             "****************",
             "****************",
             "**..*****.**..**",
@@ -30,6 +30,66 @@ char    map[16] [16] = {
             "****************",
                };
 
+USHORT  Wall[] =
+{
+    0x0000,
+    0xFFF7,
+    0xFFF7,
+    0xFFF7,
+    0x0000,
+    0xF7FF,
+    0xF7FF,
+    0xF7FF,
+    0x0000,
+    0xFFF7,
+    0xFFF7,
+    0xFFF7,
+    0x0000,
+    0xF7FF,
+    0xF7FF,
+    0xF7FF
+};
+
+USHORT  Grass[] =
+{
+    0x2002,
+    0x0110,
+    0x0000,
+    0x2080,
+    0x0008,
+    0x0401,
+    0x0000,
+    0x0002,
+    0x0100,
+    0x4010,
+    0x0000,
+    0x0400,
+    0x0001,
+    0x2000,
+    0x0010,
+    0x0100
+};
+
+USHORT  Avatar[] =
+{
+    0x01C0,
+    0x01C0,
+    0x01C0,
+    0x0080,
+    0x1F70,
+    0x1EB8,
+    0x1F58,
+    0x1F28,
+    0x0ED4,
+    0x05E8,
+    0x03D4,
+    0x03E0,
+    0x0770,
+    0x0770,
+    0x0770,
+    0x0770
+};
+    
 struct  IntuitionBase   *IntuitionBase;
 struct  Window      *FirstWindow;
 
@@ -42,7 +102,7 @@ struct  NewWindow   FirstNewWindow =
     SMART_REFRESH | ACTIVATE,
     NULL,
     NULL,
-    (UBYTE *) "Walking 0.5",
+    (UBYTE *) "Walking 0.6",
     NULL,
     NULL,
     90, 90,
@@ -50,13 +110,13 @@ struct  NewWindow   FirstNewWindow =
     WBENCHSCREEN,
 };
 
-struct  IntuiText   FirstText =
+struct  Image   Output =
 {
-    1, 0,
-    JAM2,
     0, 0,
-    NULL,
-    (UBYTE *) "x",
+    16, 16,
+    1,
+    &Avatar[0],
+    1, 0,
     NULL
 };
 
@@ -141,8 +201,6 @@ register int x, y;
 {
     struct  RastPort    *MyWindowsRastPort;
     
-    char    *Output = "*";
-    
     int     xx, yy, cx, cy;
 
     MyWindowsRastPort = FirstWindow->RPort;
@@ -152,20 +210,17 @@ register int x, y;
     {
         for(xx = x - 2, cx = 0; xx <= x + 2; xx++, cx++)
         {
-            *Output = map[yy] [xx];
-            FirstText.LeftEdge = (5 + 10 * cx);
-            FirstText.TopEdge = (5 + 8 * cy);
-            FirstText.IText = (UBYTE *) Output;
-            PrintIText(MyWindowsRastPort, &FirstText, 10L, 10L);
+            if(map[yy] [xx] == '*') Output.ImageData = &Wall[0];
+            if(map[yy] [xx] == '.') Output.ImageData = &Grass[0];
+            Output.LeftEdge = (5 + 16 * cx);
+            Output.TopEdge = (5 + 16 * cy);
+            DrawImage(MyWindowsRastPort, &Output, 10L, 10L);
         }
     }
-    *Output = 'A';
-    FirstText.LeftEdge = 25;
-    FirstText.TopEdge = 21;
-    FirstText.IText = (UBYTE *) Output;
-    FirstText.DrawMode = JAM1; 
-    PrintIText(MyWindowsRastPort, &FirstText, 10L, 10L);
-    FirstText.DrawMode = JAM2;
+    Output.LeftEdge = 37;
+    Output.TopEdge = 37;
+    Output.ImageData = &Avatar[0];
+    DrawImage(MyWindowsRastPort, &Output, 10L, 10L);
 }
 
 Open_All()
