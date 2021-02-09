@@ -2,7 +2,7 @@
 /*              */
 /* Walking Test */
 /*              */
-/* Version 0.9  */
+/* Version 1.0  */
 /*              */
 /* 09/29/91     */
 /*              */
@@ -11,6 +11,7 @@
 #include    <exec/types.h>
 #include    <intuition/intuition.h>
 #include    <graphics/gfx.h>
+#define     MAPSIZE 16
 
 char    map[17] [17] = {
             ".***************",
@@ -152,6 +153,54 @@ USHORT  Avatar[] =
     0x006C, 0x006C, 0x0000, 0x0000
 };
     
+/********************************/
+/*                              */
+/*  Chr Output Buffer           */
+/*                              */
+/********************************/
+
+USHORT  Chr[] =
+{
+    0xffff, 0xffff, 0xffff, 0xffff,
+    0xc003, 0xc003, 0xc003, 0xc003,
+    0xc003, 0xc003, 0xc003, 0xc003,
+    0xffff, 0xffff, 0xffff, 0xffff,
+    
+    0x0000, 0x0000, 0x0000, 0x0000,
+    0x0000, 0x0000, 0x0000, 0x0000,
+    0x0000, 0x0000, 0x0000, 0x0000,
+    0x0000, 0x0000, 0x0000, 0x0000,
+    
+    0x0000, 0x0000, 0x0000, 0x0000,
+    0x0000, 0x0000, 0x0000, 0x0000,
+    0x0000, 0x0000, 0x0000, 0x0000,
+    0x0000, 0x0000, 0x0000, 0x0000,
+    
+    0x0000, 0x0000, 0x0000, 0x0000,
+    0x0000, 0x0000, 0x0000, 0x0000,
+    0x0000, 0x0000, 0x0000, 0x0000,
+    0x0000, 0x0000, 0x0000, 0x0000,
+    
+    0x0000, 0x0000, 0x0000, 0x0000,
+    0x0000, 0x0000, 0x0000, 0x0000,
+    0x0000, 0x0000, 0x0000, 0x0000,
+    0x0000, 0x0000, 0x0000, 0x0000
+};
+
+/************************/  
+/*                      */
+/*  Chr Sil Buffer      */
+/*                      */
+/************************/
+
+USHORT  Sil[]   =
+{
+    0x0000, 0x0000, 0x0000, 0x0000,
+    0x0000, 0x0000, 0x0000, 0x0000,
+    0x0000, 0x0000, 0x0000, 0x0000,
+    0x0000, 0x0000, 0x0000, 0x0000
+};
+    
 struct  GfxBase     *GfxBase;
 struct  IntuitionBase   *IntuitionBase;
 struct  Window      *FirstWindow;
@@ -167,7 +216,7 @@ struct  NewScreen   NewGameScreen =
     NULL,
     CUSTOMSCREEN,
     NULL,
-    (UBYTE *)"Ultima Walking Test, V. 0.9",
+    (UBYTE *)"Ultima Walking Test, V. 1.0",
     NULL,
     NULL,
 };
@@ -182,7 +231,7 @@ struct  NewWindow   FirstNewWindow =
     WINDOWSIZING | WINDOWDRAG | WINDOWCLOSE,
     NULL,                                       /* Gadget Ptr       */
     NULL,                                       /* Chk Mrk Gfx Ptr  */
-    (UBYTE *) "Walking 0.9",                    /* Window Title Ptr */
+    (UBYTE *) "Walk 1.0",                       /* Window Title Ptr */
     NULL,                                       /* Screen Ptr       */
     NULL,                                       /* BitMap Ptr       */
     130, 130,                                   /* Min Width/Height */
@@ -196,7 +245,7 @@ struct  Image   Output =
     16, 16,     /* Width, Height        */
     5,          /* Depth (Bit Planes)   */
     &Avatar[0], /* Image Ptr            */
-    31, 31,     /* Plane Pick, On/Off   */
+    31, 0,      /* Plane Pick, On/Off   */
     NULL        /* Next Image Prt       */
 };
 
@@ -243,37 +292,37 @@ void    main()
             if(code == 'i')
             {
                 ty = y - 1;
-                if(ty < 0) ty = ty + 16;
+                if(ty < 0) ty = ty + MAPSIZE;
             }
             
             if(code == 'k')
             {
                 ty = y + 1;
-                if(ty > 15) ty = ty - 16;
+                if(ty > MAPSIZE-1) ty = ty - MAPSIZE;
             }
             
             if(code == 'j')
             {
                 tx = x - 1;
-                if(tx < 0) tx = tx + 16;
+                if(tx < 0) tx = tx + MAPSIZE;
             }
             
             if(code == 'l')
             {
                 tx = x + 1;
-                if(tx > 15) tx = tx - 16;
+                if(tx > MAPSIZE-1) tx = tx - MAPSIZE;
             }
             
-            if(map [ty] [tx] == '*')
+/*          if(map [ty] [tx] == '*')
             {
                 DisplayBeep(NULL);
-/*              printf("\nBlocked!!\n");    */
+/*              printf("\nBlocked!!\n");    *//*
             }
             else
             {
-                y = ty;
-                x = tx;
-            }
+            */  y = ty;
+                x = tx; /*
+            }                   */
             
             draw(x,y);
         }
@@ -299,6 +348,7 @@ register int x, y;
     struct  RastPort    *MyWindowsRastPort;
     
     int     xx, yy, cx, cy, dx, dy;
+    USHORT  *ChrBakImageData;
 
     MyWindowsRastPort = FirstWindow->RPort;
     
@@ -307,31 +357,31 @@ register int x, y;
     {
         yy = dy;
         
-        if(yy < 0) yy = yy + 16;
-        if(yy > 15) yy = yy - 16;
+        if(yy < 0) yy = yy + MAPSIZE;
+        if(yy > MAPSIZE-1) yy = yy - MAPSIZE;
     
         for(dx = x - 2, cx = 0; dx <= x + 2; dx++, cx++)
         {
             xx = dx;
             
-            if(xx < 0) xx = xx + 16;
-            if(xx > 15) xx = xx - 16;
+            if(xx < 0) xx = xx + MAPSIZE;
+            if(xx > MAPSIZE-1) xx = xx - MAPSIZE;
             
             if(map[yy] [xx] == '*') Output.ImageData = &Wall[0];
             if(map[yy] [xx] == '.') Output.ImageData = &Grass[0];
+            if(xx == x && yy == y)
+            {
+                ChrBakImageData = Output.ImageData;
+                DrawPlayer(ChrBakImageData);
+            }
                         
             Output.LeftEdge = (5 + 16 * cx);
             Output.TopEdge = (5 + 16 * cy);
             DrawImage(MyWindowsRastPort, &Output, 10L, 10L);
 /*          printf("%c", map[yy] [xx]); */
         }
-        Output.LeftEdge = (5 + 16 * 2);
-        // Output.RightEdge = (5 + 16 * 2);
-        Output.PlaneOnOff = 31;
-        Output.ImageData = &Avatar[0];
         DrawImage(MyWindowsRastPort, &Output, 10L, 10L);
-        Output.PlaneOnOff = 0;
-        
+            
 /*      printf("  %d, %d\n", xx, yy);   */
     }
 }
@@ -395,3 +445,32 @@ register    int tf;
 
     exit(tf);
 }
+
+/************************/
+/*                      */
+/*  Draw Players        */
+/*  V1.1                */
+/*                      */
+/*  DrawPlayer(o)       */
+/*                      */
+/************************/
+
+DrawPlayer(o)
+
+register    USHORT  *o;
+
+{
+    int c, c2;
+    
+    for(c = 0; c <= 15; c++)
+    {
+        Sil[c] = ~(Avatar[c] | Avatar[16 + c] | Avatar[32 + c] |
+               Avatar[48 + c] | Avatar[64 + c]);
+        for(c2 = 0; c2 <= 64; c2 = c2 + 16)
+            Chr[c + c2] = (*(o + c + c2) & Sil[c]) | Avatar[c + c2];
+    }
+    Output.ImageData = &Chr[0];
+}
+
+
+
