@@ -2,7 +2,7 @@
 /*              */
 /* Walking Test */
 /*              */
-/* Version 1.4  */
+/* Version 1.5  */
 /*              */
 /* 09/29/91     */
 /*              */
@@ -172,9 +172,9 @@ USHORT  Avatar[] =
 };
     
 /********************************/
-/*              */
-/*  Chr Output Buffer   */
-/*              */
+/*                              */
+/*  Chr Output Buffer           */
+/*                              */
 /********************************/
 
 USHORT  Chr[] =
@@ -236,7 +236,7 @@ struct  NewScreen   NewGameScreen =
     NULL,
     CUSTOMSCREEN,
     NULL,
-    (UBYTE *)"Ultima Walking Test, V. 1.4",
+    (UBYTE *)"Ultima Walking Test, V. 1.5",
     NULL,
     NULL,
 };
@@ -251,7 +251,7 @@ struct  NewWindow   FirstNewWindow =
     WINDOWDRAG | WINDOWCLOSE,
     NULL,                                       /* Gadget Ptr       */
     NULL,                                       /* Chk Mrk Gfx Ptr  */
-    (UBYTE *) "Walk 1.4",                       /* Window Title Ptr */
+    (UBYTE *) "Walk 1.5",                       /* Window Title Ptr */
     NULL,                                       /* Screen Ptr       */
     NULL,                                       /* BitMap Ptr       */
     200, 200,                                   /* Min Width/Height */
@@ -373,7 +373,7 @@ void    main()
             else
             {
                 y = ty;
-                x = tx; 
+                x = tx;
             }                   
         }
         
@@ -440,8 +440,8 @@ register int x, y;
             }
             DrawImage(MyWindowsRastPort, &Output, 10L, 10L);
             
-            if(UpdateCntr) ScreenToFront(GameScreen2);
-            else ScreenToFront(GameScreen1);
+            if(UpdateCntr) ScreenToFront(GameScreen1);
+            else ScreenToFront(GameScreen2);
                 
 /*          printf("  %d, %d\n", xx, yy);   */
         }
