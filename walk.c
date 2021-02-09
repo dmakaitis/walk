@@ -2,7 +2,7 @@
 /*              */
 /* Walking Test */
 /*              */
-/* Version 1.1  */
+/* Version 1.2  */
 /*              */
 /* 09/29/91     */
 /*              */
@@ -94,13 +94,13 @@ USHORT  Wall[] =
 USHORT  Grass[] =
 {
     0x5C00, 0xA67C, 0x513C, 0x286C,
-    0x241C, 0x996C, 0x46FC, 0x227C,
-    0x106C, 0x447C, 0x446C, 0x52DC,
-    0x786C, 0x7D7C, 0x0002, 0x0000,
+    0x241C, 0x99BC, 0x46FC, 0x227C,
+    0x10BC, 0x447C, 0x44BC, 0x52DC,
+    0x78BC, 0x7D7C, 0x0002, 0x0000,
     
     0x33FF, 0x19FF, 0x8EFF, 0xC77F,
-    0xC6FF, 0x67FF, 0x69FF, 0xDDFF,
-    0xEF7F, 0xF6FF, 0xF6FF, 0xFDFF,
+    0xCBFF, 0x67FF, 0xBDFF, 0xDDFF,
+    0xEF7F, 0xFCFF, 0xFBFF, 0xFDFF,
     0xFFFF, 0xFFFF, 0xFFFD, 0xFFFE,
     
     0x0000, 0x0000, 0x0000, 0x0000,
@@ -143,7 +143,7 @@ USHORT  Avatar[] =
     0x006C, 0x006C, 0x0000, 0x0000,
     
     0x3000, 0x3C00, 0x7800, 0x73E0,
-    0x23F0, 0x2FF8, 0x38F8, 0x1B98,
+    0x23F0, 0x2FF8, 0x3FF8, 0x1B98,
     0x0C60, 0x09B0, 0x00C0, 0x0000,
     0x0000, 0x0000, 0x0000, 0x0000,
     
@@ -216,7 +216,7 @@ struct  NewScreen   NewGameScreen =
     NULL,
     CUSTOMSCREEN,
     NULL,
-    (UBYTE *)"Ultima Walking Test, V. 1.1",
+    (UBYTE *)"Ultima Walking Test, V. 1.2",
     NULL,
     NULL,
 };
@@ -231,7 +231,7 @@ struct  NewWindow   FirstNewWindow =
     WINDOWSIZING | WINDOWDRAG | WINDOWCLOSE,
     NULL,                                       /* Gadget Ptr       */
     NULL,                                       /* Chk Mrk Gfx Ptr  */
-    (UBYTE *) "Walk 1.1",                       /* Window Title Ptr */
+    (UBYTE *) "Walk 1.2",                       /* Window Title Ptr */
     NULL,                                       /* Screen Ptr       */
     NULL,                                       /* BitMap Ptr       */
     130, 130,                                   /* Min Width/Height */
@@ -345,11 +345,8 @@ void    main()
                 if(tx > MAPSIZE-1) tx = tx - MAPSIZE;
             }
             
-            if(map [ty] [tx] == '*')
-            {
+            if(((map [ty] [x] == '*') && (map [y] [tx] == '*')) || (map [ty] [tx] == '*'))
                 DisplayBeep(NULL);
-/*              printf("\nBlocked!!\n");    */
-            }
             else
             {
                 y = ty;
@@ -419,9 +416,9 @@ register int x, y;
 }
 
 /********************************/
-/*                              */
+/*              */
 /* Open Intuition and Window    */
-/*                              */
+/*              */
 /********************************/
 
 Open_All()
