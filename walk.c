@@ -2,7 +2,7 @@
 /*              */
 /* Walking Test */
 /*              */
-/* Version 0.7  */
+/* Version 0.8  */
 /*              */
 /* 09/29/91     */
 /*              */
@@ -28,7 +28,7 @@ char    map[17] [17] = {
             "**........***.**",
             "*************.**",
             ".************...",
-               };
+           };
 
 /************************/
 /*                      */
@@ -161,10 +161,25 @@ USHORT  Avatar[] =
     
 struct  IntuitionBase   *IntuitionBase;
 struct  Window      *FirstWindow;
+struct  Screen      *GameScreen;
+
+struct  NewScreen   NewGameScreen =
+{
+    0, 0,
+    320, 200,
+    5,
+    0, 1,
+    NULL,
+    CUSTOMSCREEN,
+    NULL,
+    (UBYTE *)"Ultima Walking Test, V. 0.8",
+    NULL,
+    NULL,
+};
 
 struct  NewWindow   FirstNewWindow =
 {
-    230, 110,                                   /* XPos, YPos       */
+    50, 50,                                     /* XPos, YPos       */
     130, 130,                                   /* Width, Height    */
     0, 1,                                       /* Pen Colors       */
     VANILLAKEY | NEWSIZE | CLOSEWINDOW,         /* IDCME Flags      */
@@ -172,12 +187,12 @@ struct  NewWindow   FirstNewWindow =
     WINDOWSIZING | WINDOWDRAG | WINDOWCLOSE,
     NULL,                                       /* Gadget Ptr       */
     NULL,                                       /* Chk Mrk Gfx Ptr  */
-    (UBYTE *) "Walking 0.7",                    /* Window Title Ptr */
+    (UBYTE *) "Walking 0.8",                    /* Window Title Ptr */
     NULL,                                       /* Screen Ptr       */
     NULL,                                       /* BitMap Ptr       */
     130, 130,                                   /* Min Width/Height */
     320, 200,                                   /* Max Width/Height */
-    WBENCHSCREEN,                               /* Window Type      */
+    CUSTOMSCREEN,                               /* Window Type      */
 };
 
 struct  Image   Output =
@@ -204,7 +219,6 @@ void    main()
     int x = 9;
     int y = 8;
     int tx, ty;
-    int exit = 0;
     char    code;
     ULONG   MessageClass;
                 
@@ -310,6 +324,8 @@ register int x, y;
             
             if(map[yy] [xx] == '*') Output.ImageData = &Wall[0];
             if(map[yy] [xx] == '.') Output.ImageData = &Grass[0];
+            if((xx == x) & (yy == y)) Output.ImageData = &Avatar[0];
+            
             Output.LeftEdge = (5 + 16 * cx);
             Output.TopEdge = (5 + 16 * cy);
             DrawImage(MyWindowsRastPort, &Output, 10L, 10L);
@@ -317,10 +333,6 @@ register int x, y;
         }
 /*      printf("  %d, %d\n", xx, yy);   */
     }
-    Output.LeftEdge = 37;
-    Output.TopEdge = 37;
-    Output.ImageData = &Avatar[0];
-    DrawImage(MyWindowsRastPort, &Output, 10L, 10L);
 }
 
 /********************************/
@@ -339,6 +351,14 @@ Open_All()
         printf("Intuition Library not found!\n");
         Close_All(FALSE);
     }
+    
+    if(!(GameScreen = (struct Screen *) OpenScreen(&NewGameScreen)))
+    {
+        printf("Screen cannot be opened!\n");
+        Close_All(FALSE);
+    }
+    
+    FirstNewWindow.Screen = GameScreen;
     
     if (!(FirstWindow = (struct Window *) OpenWindow(&FirstNewWindow)))
     {
@@ -359,6 +379,7 @@ register    int tf;
 
 {
     if (FirstWindow)    CloseWindow(FirstWindow);
+    if (GameScreen)     CloseScreen(GameScreen);
     if (IntuitionBase)  CloseLibrary(IntuitionBase);
 
     exit(tf);
