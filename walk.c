@@ -21,46 +21,11 @@
 #include <clib/intuition_protos.h>
 #include <clib/graphics_protos.h>
 
-#define MAPSIZE 32
-#define MAPMASK (MAPSIZE-1)
+#include "map.h"
+
 #define SWIDTH 320
 #define SHEIGHT 200
 #define SDEPTH 5
-
-char map[MAPSIZE][MAPSIZE+1] = {
-    "*******..................*******",
-    "*.....*..................*.....*",
-    "*.....********************.....*",
-    "*..............................*",
-    "*.....********.***********.....*",
-    "*.....*......*.....*.....*.....*",
-    "***.***............*.....***.***",
-    "..*.*.*......*.....*.....*.*.*..",
-    "..*.*........*.............*.*..",
-    "..*.**********.....*.....*.*.*..",
-    "..*.*.....*..*.....*.....*.*.*..",
-    "..*.*..............*.....*.*.*..",
-    "..*.*.....****************.*.*..",
-    "..*.*.....*...........*..*.*.*..",
-    "..*.*.....*...........*....*.*..",
-    "..*.*******...........*..*.*.*..",
-    "..*.*.....*...........****.*.*..",
-    "..*.*......................*.*..",
-    "..*.*.**.**...........****.*.*..",
-    "..*.*.*...*...........*....*.*..",
-    "..*.*.*...*...........*....*.*..",
-    "..*.*.*...*...........*......*..",
-    "..*.*.********.....****....*.*..",
-    "..*.*.*......*.....*.......*.*..",
-    "..*.*........*.....*.......*.*..",
-    "***.***...*****...*****..***.***",
-    "*.....*****...*...*...****.....*",
-    "*.............*...*............*",
-    "*.....*****...*...*...****.....*",
-    "*.....*...*****...*****..*.....*",
-    "*.....*..................*.....*",
-    "*******..................*******",
-};
 
 /************************/
 /*                      */
@@ -257,7 +222,9 @@ struct GfxBase *GfxBase;
 
 struct Screen *GameScreen;
 struct Window *FirstWindow;
-struct BitMap *GameMap;
+struct BitMap *GameBitMap;
+
+GameMap *gameMap = NULL;
 
 void draw(int, int);
 void Open_All();
@@ -284,12 +251,9 @@ int main(int argc, char *argv[]) {
     int collisionDetection = TRUE;
 
     Open_All();
-    
+
     FOREVER {
         draw(x, y);
-        
-        tx = x;
-        ty = y;
         
         if ((message = (struct IntuiMessage *) GetMsg(FirstWindow->UserPort)) == NULL) {
             Wait(1L << FirstWindow->UserPort->mp_SigBit);
@@ -303,70 +267,37 @@ int main(int argc, char *argv[]) {
         
         if(MessageClass & RAWKEY)
         {
+            tx = x;
+            ty = y;
+        
             switch(code) {
                 case 0x3e:
                     ty = y - 1;
-                    if(ty < 0) {
-                        ty = ty + MAPSIZE;
-                    }
                     break;
                 case 0x1e:
                     ty = y + 1;
-                    if(ty > MAPSIZE-1) {
-                        ty = ty - MAPSIZE;
-                    }
                     break;
                 case 0x2d:
                     tx = x - 1;
-                    if(tx < 0) {
-                        tx = tx + MAPSIZE;
-                    }
                     break;
                 case 0x2f:
                     tx = x + 1;
-                    if(tx > MAPSIZE-1) {
-                        tx = tx - MAPSIZE;
-                    }
                     break;
                 case 0x3d:
                     ty = y - 1;
-                    if(ty < 0) {
-                        ty = ty + MAPSIZE;
-                    }
                     tx = x - 1;
-                    if(tx < 0) {
-                        tx = tx + MAPSIZE;
-                    }
                     break;
                 case 0x3f:
                     ty = y - 1;
-                    if(ty < 0) {
-                        ty = ty + MAPSIZE;
-                    }
                     tx = x + 1;
-                    if(tx > MAPSIZE-1) {
-                        tx = tx - MAPSIZE;
-                    }
                     break;
                 case 0x1d:
                     ty = y + 1;
-                    if(ty > MAPSIZE-1) {
-                        ty = ty - MAPSIZE;
-                    }
                     tx = x - 1;
-                    if(tx < 0) {
-                        tx = tx + MAPSIZE;
-                    }
                     break;
                 case 0x1f:
                     ty = y + 1;
-                    if(ty > MAPSIZE-1) {
-                        ty = ty - MAPSIZE;
-                    }
                     tx = x + 1;
-                    if(tx > MAPSIZE-1) {
-                        tx = tx - MAPSIZE;
-                    }
                     break;
                 case 0x45:
                     Close_All(TRUE);
@@ -380,7 +311,22 @@ int main(int argc, char *argv[]) {
                     }
             }
 
-            if(collisionDetection && (((map [ty] [x] == '*') && (map [y] [tx] == '*')) || (map [ty] [tx] == '*'))) {
+            // Handle wrapping around the map if needed
+            if(tx < 0) {
+                tx += gameMap->width;
+            }
+            if(tx >= gameMap->width) {
+                tx -= gameMap->width;
+            }
+            if(ty < 0) {
+                ty += gameMap->height;
+            }
+            if(ty >= gameMap->height) {
+                ty -= gameMap->height;
+            }
+
+            // Check to see if something is in the way
+            if(collisionDetection && (((ReadMap(gameMap, x, ty) == '*') && (ReadMap(gameMap, tx, y) == '*')) || (ReadMap(gameMap, tx, ty) == '*'))) {
                 DisplayBeep(NULL);
             } else {
                 y = ty;
@@ -423,7 +369,7 @@ void draw(int x, int y) {
         outputX = 8;
 
         for(drawX = 0; drawX < 9; drawX++) {
-            switch(map[(y - 4 + drawY) & MAPMASK][(x - 4 + drawX) & MAPMASK]) {
+            switch(ReadMap(gameMap, x - 4 + drawX, y - 4 + drawY)) {
                 case '*':
                     outImage.ImageData = Wall;
                     // bitmap.Planes[0] = (UBYTE *)(&Wall[0]);
@@ -495,7 +441,7 @@ void Open_All() {
     
     // Allocate a bitmap for our game screen...
 
-    if(!(GameMap = allocbitmap(SDEPTH, SWIDTH, SHEIGHT))) {
+    if(!(GameBitMap = allocbitmap(SDEPTH, SWIDTH, SHEIGHT))) {
         Close_All(FALSE);
     }
     
@@ -503,13 +449,13 @@ void Open_All() {
 
     // InitBitMap(&ScrMap, SDEEP, SWIDE, SHIGH);
     // ScrMap.BytesPerRow *= SDEEP;
-    // base = GameMap->Planes[0];
+    // base = GameBitMap->Planes[0];
     // for(i = 0; i < SDEEP; i++) {
     //     ScrMap.Planes[i] = base;
-    //     base += GameMap->BytesPerRow;
+    //     base += GameBitMap->BytesPerRow;
     // }
     
-    NewGameScreen.CustomBitMap = GameMap;
+    NewGameScreen.CustomBitMap = GameBitMap;
     if(!(GameScreen = (struct Screen *) OpenScreen(&NewGameScreen))) {
         Close_All(FALSE);
     }
@@ -542,6 +488,9 @@ void Open_All() {
 
     // Build the avatar alpha mask
     avatarMask = buildAvatarMask(Avatar, 5);
+
+    // Load the game map
+    gameMap = LoadGameMap("resources/castle.map");
 }
 
 /****************/
@@ -551,6 +500,9 @@ void Open_All() {
 /****************/
 
 void Close_All(int tf) {
+    if(gameMap) {
+        ReleaseGameMap(gameMap);
+    }
     if(avatarMask) {
         freeAvatarMask(avatarMask);
     }
@@ -560,8 +512,8 @@ void Close_All(int tf) {
     if(GameScreen) {
         CloseScreen(GameScreen);
     }
-    if(GameMap) {
-        freebitmap(GameMap);
+    if(GameBitMap) {
+        freebitmap(GameBitMap);
     }
     if(GfxBase) {
         CloseLibrary((struct Library *)GfxBase);
