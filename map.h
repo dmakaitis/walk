@@ -11,7 +11,7 @@
  * Map structure.
  */
 
-typedef struct GameMap {
+typedef struct {
     int width, height;
     char *map;
 } GameMap;
