@@ -103,7 +103,7 @@ void ReadTileImages(Tiles *tiles, BitMapHeader *bitMapHeader, struct IFFHandle *
         int destPtr = 0;
 
         for(int tileY = 0; tileY < heightTiles; tileY++) {
-            src = bitmap + tileY * 16 * widthTiles;
+            src = bitmap + tileY * 16 * rowOffset;
             for(int tileX = 0; tileX < widthTiles; tileX++) {
                 for(int plane = 0; plane < bitMapHeader->numPlanes; plane++) {
                     for(int row = 0; row < 16; row++) {

@@ -28,6 +28,10 @@
 #define SHEIGHT 200
 #define SDEPTH 5
 
+#define FLOOR 211
+#define WALL 144
+#define AVATAR 1784
+
 /********************************/
 /*                              */
 /*  Chr Output Buffer           */
@@ -63,6 +67,8 @@ void freeAvatarMask(USHORT *);
 /* Main Program Loop    */
 /*                      */
 /************************/
+
+int floor = FLOOR;
 
 int main(int argc, char *argv[]) {
     int x = 16;
@@ -127,6 +133,20 @@ int main(int argc, char *argv[]) {
                     break;
                 case 0x50:                      // F1
                     collisionDetection = collisionDetection ? FALSE : TRUE;
+                    break;
+                case 0x1a:                      // [
+                    floor--;
+                    if(floor < 0) {
+                        floor = 2047;
+                    }
+                    printf("Selected floor index: %i @ 0x%08x\n", floor, (unsigned int)(GetTile(tiles, floor)));
+                    break;
+                case 0x1b:                      // ]
+                    floor++;
+                    if(floor >= 2048) {
+                        floor = 0;
+                    }
+                    printf("Selected floor index: %i @ 0x%08x\n", floor, (unsigned int)(GetTile(tiles, floor)));
                     break;
                 default:
                     if(code >= 0) {
@@ -194,7 +214,7 @@ void draw(int x, int y) {
         for(drawX = 0; drawX < 9; drawX++) {
             switch(ReadMap(gameMap, x - 4 + drawX, y - 4 + drawY)) {
                 case '*':
-                    outImage.ImageData = GetTile(tiles, 1);
+                    outImage.ImageData = GetTile(tiles, WALL);
                     // bitmap.Planes[0] = (UBYTE *)(&Wall[0]);
                     // bitmap.Planes[1] = (UBYTE *)(&Wall[16]);
                     // bitmap.Planes[2] = (UBYTE *)(&Wall[32]);
@@ -202,7 +222,7 @@ void draw(int x, int y) {
                     // bitmap.Planes[4] = (UBYTE *)(&Wall[64]);
                     break;
                 case '.':
-                    outImage.ImageData = GetTile(tiles, 0);
+                    outImage.ImageData = GetTile(tiles, floor);
                     // bitmap.Planes[0] = (UBYTE *)(&Grass[0]);
                     // bitmap.Planes[1] = (UBYTE *)(&Grass[16]);
                     // bitmap.Planes[2] = (UBYTE *)(&Grass[32]);
@@ -212,7 +232,7 @@ void draw(int x, int y) {
             }
 
             if(drawX == 4 && drawY == 4) {
-                DrawAvatarOverTile(GetTile(tiles, 2), outImage.ImageData, avatarMask, avatarBuffer);
+                DrawAvatarOverTile(GetTile(tiles, AVATAR), outImage.ImageData, avatarMask, avatarBuffer);
                 outImage.ImageData = avatarBuffer;
             }
 
@@ -317,10 +337,11 @@ void Open_All() {
     gameMap = LoadGameMap("resources/castle.map");
 
     // Load the game tiles
-    tiles = LoadTiles("resources/tiles.iff");
+    // tiles = LoadTiles("resources/tiles.iff");
+    tiles = LoadTiles("resources/u6tiles.iff");
 
     // Build the avatar alpha mask
-    avatarMask = buildAvatarMask(GetTile(tiles, 2), 5);
+    avatarMask = buildAvatarMask(GetTile(tiles, AVATAR), 5);
 
     // Set the screen color palette...
     LoadRGB4(ViewPortAddress(FirstWindow), tiles->palette, 32);
